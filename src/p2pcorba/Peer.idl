@@ -1,0 +1,6 @@
+interface Peer
+{
+    void enviar_Mensaje(in string mensaje);
+    void recibir_Mensaje();
+};
+
