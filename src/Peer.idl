@@ -1,6 +1,5 @@
 interface Peer
 {
     void enviar_Mensaje(in string mensaje);
-    void recibir_Mensaje();
+    void actualizar_Lista_Peers(in string peers);
 };
-
