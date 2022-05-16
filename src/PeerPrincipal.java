@@ -45,8 +45,8 @@ public class PeerPrincipal {
             peer.setAreaListaPeers(vista.peersTextArea);
             setListeners();
             vista.mensajeTextField.requestFocus();
-
             vista.setTitle(idPeer);
+            vista.setVisible(true);
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -55,7 +55,6 @@ public class PeerPrincipal {
     private void iniciarORB(String[] args, String idPeer) throws InvalidName, AdapterInactive, ServantNotActive, WrongPolicy, NotFound, org.omg.CosNaming.NamingContextPackage.InvalidName, CannotProceed {
         try {
             ORB orb = ORB.init(args, null);
-
             // Referencia al POA raiz y activa el manejador de POA
             POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
             rootpoa.the_POAManager().activate();
@@ -72,47 +71,36 @@ public class PeerPrincipal {
             // Enlaza la referencia al objeto en nombre del servicio
             NameComponent path[] = ncRef.to_name(idPeer);
             ncRef.rebind(path, href);
-
+            System.out.println("OK: " + peer.getIdPeer());
             //actualizarListaPeers();
             // Espera la invocación remota del cliente
             new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        orb.run();
-                    } catch (Exception e) {
-                        System.out.println("Excepción:" + e.getMessage());
-                    }
+                    orb.run();
                 }
             };
         } catch (Exception exception) {
-            System.out.println("Error: " + exception.getMessage());
+            System.out.println("Error initORB: " + exception.getMessage());
             System.out.println(exception);
-
-            JOptionPane.showMessageDialog(null,
-                "Hemos detectado que el programa ha intentado iniciarse,\n"
-                + "Pero ORB esta apagado. Cuando ORB se se encienda podra iniciar el Peer.",
-                "ORB esta apagado",
-                JOptionPane.ERROR_MESSAGE);
-
             System.exit(1);
         }
     }
 
     private void actualizarListaPeers() {
         try {
+            String peerList = "";
             BindingListHolder bList = new BindingListHolder();
             BindingIteratorHolder bIterator = new BindingIteratorHolder();
             ncRef.list(1000, bList, bIterator);
-            String peerList = "";
-            //recuperar la lista de peers y hacer el update en cada peer con su referencia por nombre
+            //recuperar la lista de peers 
             for (Binding v : bList.value) {
                 peerList += v.binding_name[0].id + "\t@@OK@@\n";
-                NameComponent[] name = {v.binding_name[0]};
-                if (v.binding_type == BindingType.ncontext) {
-                    Peer aux = PeerHelper.narrow(ncRef.resolve_str(name[0].id));
-                    aux.actualizar_Lista_Peers(peerList);
-                }
+            }
+            //y hacer el update en cada peer con su referencia por nombre
+            for (Binding v : bList.value) {
+                Peer aux = PeerHelper.narrow(ncRef.resolve_str(v.binding_name[0].id));
+                aux.actualizar_Lista_Peers(peerList);
             }
         } catch (Exception e) {
             System.out.println("ERROR : " + e);
@@ -122,7 +110,8 @@ public class PeerPrincipal {
     private void setListeners() {
         vista.enviarMensajeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                enviar_Mensaje();
+                String msg = vista.mensajeTextField.getText();
+                enviar_Mensaje(msg);
             }
         });
         vista.addWindowListener(new WindowAdapter() {
@@ -133,8 +122,7 @@ public class PeerPrincipal {
         });
     }
 
-    private void enviar_Mensaje() {
-        String msg = vista.mensajeTextField.getText();
+    private void enviar_Mensaje(String msg) {
         try {
             BindingListHolder bList = new BindingListHolder();
             BindingIteratorHolder bIterator = new BindingIteratorHolder();
@@ -152,8 +140,7 @@ public class PeerPrincipal {
     private void cerrarConexionPeer() {
         try {
             System.out.println("F en el chat");
-            NameComponent path[] = ncRef.to_name(peer.getIdPeer());
-            ncRef.unbind(path);
+            ncRef.unbind( ncRef.to_name(peer.getIdPeer()));
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -162,37 +149,15 @@ public class PeerPrincipal {
     }
 
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(PeerView.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(PeerView.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(PeerView.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(PeerView.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 try {
                     PeerPrincipal pmain = new PeerPrincipal(args);
-                    pmain.vista.setVisible(true);
+                    pmain.actualizarListaPeers();
                 } catch (Exception e) {
-                    System.out.println("Error de inicializacion" + e);
+                    System.out.println("Error de inicializacion" + e.getMessage() + "\n\n\n");
                     e.printStackTrace();
                 }
             }

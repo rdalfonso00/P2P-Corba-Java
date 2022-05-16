@@ -25,7 +25,8 @@ public class PeerImpl extends PeerPOA {
     public void enviar_Mensaje(String mensaje) {
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
-        String str = dateFormat.format(date) + " | ID: " + idPeer + mensaje + "\n";
+        this.mensaje += dateFormat.format(date) + " | : "+ mensaje + "\n";
+        areaMensajes.setText(this.mensaje);
     }
 
     @Override
